@@ -1,4 +1,8 @@
-goflagutil
-==========
+ugfug
+=====
 
-a couple of utilities for go's flag package
+Ungraceful Gnu-like Flag Utility for Golang
+
+This just allows the Go `flag` package to behave a bit more Gnu-ish - a bit more 'coreutils'-like.
+
+The main feature being that options such as `-lah` are treated as `-l -a -h`, whereas `--lah` is treated as-is, as a single option `--lah`
