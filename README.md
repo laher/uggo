@@ -1,8 +1,8 @@
-ugfug
+uggo
 =====
 
-Ungraceful Go Flag Utility for Gnu-ification
+Ungraceful Gnu-ification for Go
 
-This just allows the Go `flag` package to behave a bit more Gnu-ish - a bit more 'coreutils'-like.
+This helps Go commandline apps to behave a bit more 'coreutils'-like, or 'Gnu-ish'.
 
-The main feature being that options such as `-lah` are treated as `-l -a -h`, whereas `--lah` is treated as-is, as a single option `--lah`
+The main feature being to treat options such as `-lah` are treated as `-l -a -h`, whereas `--lah` is treated as-is, as a single option `--lah`
