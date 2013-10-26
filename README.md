@@ -1,7 +1,7 @@
 ugfug
 =====
 
-Ungraceful Gnu-like Flag Utility for Golang
+Ungraceful Go Flag Utility for Gnu-ification
 
 This just allows the Go `flag` package to behave a bit more Gnu-ish - a bit more 'coreutils'-like.
 
