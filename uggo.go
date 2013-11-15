@@ -4,10 +4,9 @@ import (
 	"strings"
 )
 
-
 //note: allow '-help' to be used as single-hyphen (to assist the unitiated)
 func Gnuify(call []string) []string {
-	return GnuifyWithExceptions(call, []string{ "-help" })
+	return GnuifyWithExceptions(call, []string{"-help"})
 }
 
 func contains(slice []string, subject string) bool {
