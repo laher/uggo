@@ -65,7 +65,7 @@ func (flagSet FlagSetWithAliases) PrintVersion() {
 }
 
 func (flagSet FlagSetWithAliases) Usage() {
-	fmt.Fprintf(flagSet.out, "`%s %s`:\n", flagSet.name, flagSet.argUsage)
+	fmt.Fprintf(flagSet.out, "Usage: `%s %s`\n", flagSet.name, flagSet.argUsage)
 	flagSet.PrintDefaults()
 }
 
