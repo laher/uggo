@@ -12,6 +12,7 @@ import (
 
 type FlagSetWithAliases struct {
 	*flag.FlagSet
+	AutoGnuify   bool //sets whether it interprets options gnuishly (e.g. -lah being equivalent to -l -a -h)
 	name           string
 	argUsage       string
 	out            io.Writer
@@ -24,7 +25,7 @@ type FlagSetWithAliases struct {
 func NewFlagSet(desc string, errorHandling flag.ErrorHandling) FlagSetWithAliases {
 	fs := flag.NewFlagSet(desc, errorHandling)
 	fs.SetOutput(ioutil.Discard)
-	return FlagSetWithAliases{fs, desc, "", os.Stderr, map[string][]string{}, nil, nil, "unknown"}
+	return FlagSetWithAliases{fs, false, desc, "", os.Stderr, map[string][]string{}, nil, nil, "unknown"}
 }
 
 func NewFlagSetDefault(name, argUsage, version string) FlagSetWithAliases {
@@ -32,7 +33,7 @@ func NewFlagSetDefault(name, argUsage, version string) FlagSetWithAliases {
 	fs.SetOutput(ioutil.Discard)
 	tmp := false
 	tmp2 := false
-	flagSet := FlagSetWithAliases{fs, name, argUsage, os.Stderr, map[string][]string{}, &tmp, &tmp2, version}
+	flagSet := FlagSetWithAliases{fs, true, name, argUsage, os.Stderr, map[string][]string{}, &tmp, &tmp2, version}
 	flagSet.BoolVar(flagSet.isPrintUsage, "help", false, "Show this help")
 	flagSet.BoolVar(flagSet.isPrintVersion, "version", false, "Show version")
 	flagSet.version = version
@@ -142,8 +143,10 @@ func (flagSet FlagSetWithAliases) RecordAliases(items []string, typ string) {
 }
 
 func (flagSet FlagSetWithAliases) Parse(call []string) error {
-	gnuified := Gnuify(call)
-	return flagSet.FlagSet.Parse(gnuified)
+	if flagSet.AutoGnuify {
+		call = Gnuify(call)
+	}
+	return flagSet.FlagSet.Parse(call)
 }
 
 func (flagSet FlagSetWithAliases) PrintDefaults() {
