@@ -9,6 +9,10 @@ Yes, there are many other flagset libraries out there.
 This one provides a wrapper around the existing `flag.FlagSet`, embedding and embellishing it.
 You can use uggo as a drop-in replacement for flag.FlagSet, or you can specify a couple of different behaviours. Up to you.
 
+The reason why it's called 'ungraceful' is because it's an approximation of gnu-like behaviour, as close as I could get while still wrapping `flag.FlagSet`. 
+It's good enough for me anyway. 
+Also, the STDIN-pipe-detection is platform-specific, relying on an undocumented behaviour in Windows.
+
 ## Initial features
 
  * 'Gnuify' options such as `-lah` so they are treated as `-l -a -h` (whereas `--lah` is treated as-is, as a single option `--lah`)
