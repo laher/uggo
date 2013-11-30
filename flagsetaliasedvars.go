@@ -155,7 +155,6 @@ func (flagSet FlagSetWithAliases) PrintDefaults() {
 
 func (flagSet FlagSetWithAliases) PrintDefaultsTo(out io.Writer) {
 	flagSet.FlagSet.VisitAll(func(fl *flag.Flag) {
-		format := "-%s=%s"
 		l := 0
 		alts, isAliased := flagSet.aliasMap[fl.Name]
 		if isAliased {
@@ -165,14 +164,8 @@ func (flagSet FlagSetWithAliases) PrintDefaultsTo(out io.Writer) {
 				li, _ := fmt.Fprint(out, "-")
 				l += li
 			}
-			//no known straightforward way to test for boolean types
-			if fl.DefValue == "false" {
-				li, _ = fmt.Fprintf(out, "-%s", fl.Name)
-				l += li
-			} else {
-				li, _ = fmt.Fprintf(out, format, fl.Name, fl.DefValue)
-				l += li
-			}
+			li, _ = fmt.Fprintf(out, "-%s", fl.Name)
+			l += li
 			fmt.Fprint(out, " ")
 			l += 1
 			for _, alt := range alts {
@@ -181,6 +174,13 @@ func (flagSet FlagSetWithAliases) PrintDefaultsTo(out io.Writer) {
 					l += li
 				}
 				li, _ := fmt.Fprintf(out, "-%s ", alt)
+				l += li
+			}
+			//defaults:
+			//no known straightforward way to test for boolean types
+			if fl.DefValue == "false" {
+			} else {
+				li, _ = fmt.Fprintf(out, " %s", fl.DefValue)
 				l += li
 			}
 		} else if !flagSet.isAlternative(fl.Name) {
@@ -194,6 +194,7 @@ func (flagSet FlagSetWithAliases) PrintDefaultsTo(out io.Writer) {
 				li, _ = fmt.Fprintf(out, "-%s", fl.Name)
 				l += li
 			} else {
+				format := "-%s %s"
 				li, _ = fmt.Fprintf(out, format, fl.Name, fl.DefValue)
 				l += li
 			}
