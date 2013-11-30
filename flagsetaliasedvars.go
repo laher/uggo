@@ -180,7 +180,7 @@ func (flagSet FlagSetWithAliases) PrintDefaultsTo(out io.Writer) {
 			//no known straightforward way to test for boolean types
 			if fl.DefValue == "false" {
 			} else {
-				li, _ = fmt.Fprintf(out, " %s", fl.DefValue)
+				li, _ = fmt.Fprintf(out, "%s", fl.DefValue)
 				l += li
 			}
 		} else if !flagSet.isAlternative(fl.Name) {
