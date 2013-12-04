@@ -3,6 +3,6 @@
 package uggo
 
 //not implemented!
-func isPipingStdin() bool {
+func IsPipingStdin() bool {
 	return false
 }
