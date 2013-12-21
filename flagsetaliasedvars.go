@@ -214,3 +214,89 @@ func (flagSet FlagSetWithAliases) PrintDefaultsTo(out io.Writer) {
 	})
 	fmt.Fprintln(out, "")
 }
+
+type FileOpener func() (*os.File, error)
+
+func (flagSet FlagSetWithAliases) ArgsAsReadables() []FileOpener {
+	args := flagSet.Args()
+	if len(args) > 0 {
+		readers := []FileOpener{}
+		for _, arg := range args {
+			if arg == "-" {
+				reader := func() (*os.File, error) {
+					return os.Stdin, nil
+				}
+				readers = append(readers, reader)
+			} else {
+				reader := func() (*os.File, error) {
+					return os.Open(arg)
+				}
+				readers = append(readers, reader)
+			}
+		} 
+		return readers
+	} else {
+		reader := func() (*os.File, error) {
+			return os.Stdin, nil
+		}
+		return []FileOpener{reader}
+	}
+}
+
+//atomically open all files at once. Only use this when you actually want to open all at once (e.g. writing the same data to all at once).
+func OpenAll(openers []FileOpener) ([]*os.File, error) {
+	files := []*os.File{}
+	for _, opener := range openers {
+		file, err := opener()
+		if err != nil {
+			//close all opened files
+			for _, openedfile := range files {
+				openedfile.Close()
+			}
+			return nil, err
+		}
+		files = append(files, file)
+	}
+	return files, nil
+}
+
+func (flagSet FlagSetWithAliases) ArgsAsWriteables(flag int, perm os.FileMode) []FileOpener {
+	args := flagSet.Args()
+	if len(args) > 0 {
+		writers := []FileOpener{}
+		for _, arg := range args {
+			if arg == "-" {
+				writer := func() (*os.File, error) {
+					return os.Stdout, nil
+				}
+				writers = append(writers, writer)
+			} else {
+				writer := func() (*os.File, error) {
+					return os.OpenFile(arg, os.O_WRONLY|flag, perm)
+				}
+				writers = append(writers, writer)
+			}
+		} 
+		return writers
+	} else {
+		writer := func() (*os.File, error) {
+			return os.Stdout, nil
+		}
+		return []FileOpener{writer}
+	}
+}
+
+/*
+func (flagSet FlagSetWithAliases) ArgsAsWriters(flag int, perm os.FileMode) ([]io.Writer, error) {
+	writers := []io.Writer{}
+	openers := flagSet.ArgsAsWriteables(flag, perm)
+	for _, writeable := range openers {
+		writer, err := writeable()
+		if err != nil {
+			return nil, err
+		}
+		writers = append(writers, writer)
+	}
+	return writers, nil
+}
+*/

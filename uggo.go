@@ -4,6 +4,10 @@ import (
 	"strings"
 )
 
+const (
+	VERSION = "0.3.1"
+)
+
 //note: allow '-help' to be used as single-hyphen (to assist the unitiated)
 func Gnuify(call []string) []string {
 	return GnuifyWithExceptions(call, []string{"-help"})
