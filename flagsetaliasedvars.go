@@ -302,7 +302,7 @@ func ToWriteableOpeners(args []string, flag int, perm os.FileMode) []FileOpener 
 // Convert arguments to File openers.
 // An argument with filename "-" is treated as the 'standard output'
 // Takes a writer 'outPipe' for handling this special case
-func ToPipeWriteableOpeners(args []string, flag int, perm os.FileMode, outPipe io.Writer) []FileOpener {
+func ToPipeWriteableOpeners(args []string, flag int, perm os.FileMode, outPipe *os.File) []FileOpener {
 	if len(args) > 0 {
 		writers := []FileOpener{}
 		for _, arg := range args {
@@ -331,14 +331,14 @@ func ToPipeWriteableOpeners(args []string, flag int, perm os.FileMode, outPipe i
 // An argument with filename "-" is treated as the 'standard output'
 func (flagSet FlagSetWithAliases) ArgsAsWriteables(flag int, perm os.FileMode) []FileOpener {
 	args := flagSet.Args()
-	return ToPipableWriteableOpeners(args, flag, perm, os.Stdout)
+	return ToPipeWriteableOpeners(args, flag, perm, os.Stdout)
 }
 
 // Convert arguments to File openers.
 // An argument with filename "-" is treated as the 'standard output'
 // Takes a writer 'outPipe' for handling this special case
-func (flagSet FlagSetWithAliases) ArgsAsPipeWriteables(flag int, perm os.FileMode, outPipe io.Writer) []FileOpener {
+func (flagSet FlagSetWithAliases) ArgsAsPipeWriteables(flag int, perm os.FileMode, outPipe *os.File) []FileOpener {
 	args := flagSet.Args()
-	return ToPipableWriteableOpeners(args, flag, perm, outPipe)
+	return ToPipeWriteableOpeners(args, flag, perm, outPipe)
 }
 
