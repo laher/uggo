@@ -10,6 +10,12 @@ import (
 	"time"
 )
 
+
+// This FlagSet embeds Golang's FlagSet but adds some extra flavour 
+// - support for 'aliased' arguments
+// - support for 'gnuification' of short-form arguments
+// - handling of --help and --version
+// - some flexibility in 'usage' message
 type FlagSetWithAliases struct {
 	*flag.FlagSet
 	AutoGnuify   bool //sets whether it interprets options gnuishly (e.g. -lah being equivalent to -l -a -h)
@@ -22,24 +28,31 @@ type FlagSetWithAliases struct {
 	version        string
 }
 
+// factory which sets defaults and 
+// NOTE: discards thet output of the embedded flag.FlagSet. This was necessary in order to override the 'usage' message
 func NewFlagSet(desc string, errorHandling flag.ErrorHandling) FlagSetWithAliases {
 	fs := flag.NewFlagSet(desc, errorHandling)
 	fs.SetOutput(ioutil.Discard)
 	return FlagSetWithAliases{fs, false, desc, "", os.Stderr, map[string][]string{}, nil, nil, "unknown"}
 }
 
+// Factory setting useful defaults
+// Sets up --help and --version flags
 func NewFlagSetDefault(name, argUsage, version string) FlagSetWithAliases {
 	fs := flag.NewFlagSet(name+" "+argUsage, flag.ContinueOnError)
 	fs.SetOutput(ioutil.Discard)
-	tmp := false
-	tmp2 := false
-	flagSet := FlagSetWithAliases{fs, true, name, argUsage, os.Stderr, map[string][]string{}, &tmp, &tmp2, version}
+	// temp variables for storing defaults
+	tmpPrintUsage := false
+	tmpPrintVersion := false
+	flagSet := FlagSetWithAliases{fs, true, name, argUsage, os.Stderr, map[string][]string{}, &tmpPrintUsage, &tmpPrintVersion, version}
 	flagSet.BoolVar(flagSet.isPrintUsage, "help", false, "Show this help")
 	flagSet.BoolVar(flagSet.isPrintVersion, "version", false, "Show version")
 	flagSet.version = version
 	return flagSet
 }
 
+// process built-in help and version flags.
+//  Returns 'true' when one of these was set. (i.e. stop processing)
 func (flagSet FlagSetWithAliases) ProcessHelpOrVersion() bool {
 	if flagSet.IsHelp() {
 		flagSet.Usage()
@@ -61,19 +74,23 @@ func (flagSet FlagSetWithAliases) IsVersion() bool {
 	return *flagSet.isPrintVersion
 }
 
+// PrintVersion
 func (flagSet FlagSetWithAliases) PrintVersion() {
 	fmt.Fprintf(flagSet.out, "`%s` version: '%s'\n", flagSet.name, flagSet.version)
 }
 
+// Print Usage message
 func (flagSet FlagSetWithAliases) Usage() {
 	fmt.Fprintf(flagSet.out, "Usage: `%s %s`\n", flagSet.name, flagSet.argUsage)
 	flagSet.PrintDefaults()
 }
 
+// Set writer for displaying help and usage messages.
 func (flagSet FlagSetWithAliases) SetOutput(out io.Writer) {
 	flagSet.out = out
 }
 
+// Set up multiple names for a bool flag
 func (flagSet FlagSetWithAliases) AliasedBoolVar(p *bool, items []string, def bool, description string) {
 	flagSet.RecordAliases(items, "bool")
 	for _, item := range items {
@@ -81,6 +98,7 @@ func (flagSet FlagSetWithAliases) AliasedBoolVar(p *bool, items []string, def bo
 	}
 }
 
+// Set up multiple names for a time.Duration flag
 func (flagSet FlagSetWithAliases) AliasedDurationVar(p *time.Duration, items []string, def time.Duration, description string) {
 	flagSet.RecordAliases(items, "duration")
 	for _, item := range items {
@@ -88,6 +106,7 @@ func (flagSet FlagSetWithAliases) AliasedDurationVar(p *time.Duration, items []s
 	}
 }
 
+// Set up multiple names for a float64 flag
 func (flagSet FlagSetWithAliases) AliasedFloat64Var(p *float64, items []string, def float64, description string) {
 	flagSet.RecordAliases(items, "float64")
 	for _, item := range items {
@@ -95,6 +114,7 @@ func (flagSet FlagSetWithAliases) AliasedFloat64Var(p *float64, items []string, 
 	}
 }
 
+// Set up multiple names for an int flag
 func (flagSet FlagSetWithAliases) AliasedIntVar(p *int, items []string, def int, description string) {
 	flagSet.RecordAliases(items, "int")
 	for _, item := range items {
@@ -102,6 +122,7 @@ func (flagSet FlagSetWithAliases) AliasedIntVar(p *int, items []string, def int,
 	}
 }
 
+// Set up multiple names for an int64 flag
 func (flagSet FlagSetWithAliases) AliasedInt64Var(p *int64, items []string, def int64, description string) {
 	flagSet.RecordAliases(items, "int64")
 	for _, item := range items {
@@ -109,6 +130,7 @@ func (flagSet FlagSetWithAliases) AliasedInt64Var(p *int64, items []string, def 
 	}
 }
 
+// Set up multiple names for a string flag
 func (flagSet FlagSetWithAliases) AliasedStringVar(p *string, items []string, def string, description string) {
 	flagSet.RecordAliases(items, "string")
 	for _, item := range items {
@@ -116,6 +138,7 @@ func (flagSet FlagSetWithAliases) AliasedStringVar(p *string, items []string, de
 	}
 }
 
+// returns true if the given flag name is the 'main' name or a subsequent name
 func (flagSet FlagSetWithAliases) isAlternative(name string) bool {
 	for _, altSlice := range flagSet.aliasMap {
 		for _, alt := range altSlice {
@@ -127,6 +150,7 @@ func (flagSet FlagSetWithAliases) isAlternative(name string) bool {
 	return false
 }
 
+// keep track of aliases to a given flag
 func (flagSet FlagSetWithAliases) RecordAliases(items []string, typ string) {
 	var key string
 	for i, item := range items {
@@ -142,6 +166,7 @@ func (flagSet FlagSetWithAliases) RecordAliases(items []string, typ string) {
 	}
 }
 
+// parse flags from a given set of argv type flags
 func (flagSet FlagSetWithAliases) Parse(call []string) error {
 	if flagSet.AutoGnuify {
 		call = Gnuify(call)
@@ -149,10 +174,13 @@ func (flagSet FlagSetWithAliases) Parse(call []string) error {
 	return flagSet.FlagSet.Parse(call)
 }
 
+// print defaults to the default output writer
 func (flagSet FlagSetWithAliases) PrintDefaults() {
 	flagSet.PrintDefaultsTo(flagSet.out)
 }
 
+// print defaults to a given writer. 
+// Output distinguishes aliases
 func (flagSet FlagSetWithAliases) PrintDefaultsTo(out io.Writer) {
 	flagSet.FlagSet.VisitAll(func(fl *flag.Flag) {
 		l := 0
@@ -215,8 +243,11 @@ func (flagSet FlagSetWithAliases) PrintDefaultsTo(out io.Writer) {
 	fmt.Fprintln(out, "")
 }
 
+// function which can (open and) return a File at some later time
 type FileOpener func() (*os.File, error)
 
+// converts arguments to readable file references.
+// An argument with filename "-" is treated as the 'standard input'
 func (flagSet FlagSetWithAliases) ArgsAsReadables() []FileOpener {
 	args := flagSet.Args()
 	if len(args) > 0 {
@@ -243,7 +274,9 @@ func (flagSet FlagSetWithAliases) ArgsAsReadables() []FileOpener {
 	}
 }
 
-//atomically open all files at once. Only use this when you actually want to open all at once (e.g. writing the same data to all at once).
+// atomically open all files at once. 
+// Only use this when you actually want all open at once (rather than sequentially)
+// e.g. writing the same data to all at once as-in a 'tee' operation.
 func OpenAll(openers []FileOpener) ([]*os.File, error) {
 	files := []*os.File{}
 	for _, opener := range openers {
@@ -260,14 +293,22 @@ func OpenAll(openers []FileOpener) ([]*os.File, error) {
 	return files, nil
 }
 
-func (flagSet FlagSetWithAliases) ArgsAsWriteables(flag int, perm os.FileMode) []FileOpener {
-	args := flagSet.Args()
+// Convert arguments to File openers.
+// An argument with filename "-" is treated as the 'standard output'
+func ToWriteableOpeners(args []string, flag int, perm os.FileMode) []FileOpener {
+	return ToPipeWriteableOpeners(args, flag, perm, os.Stdout)
+}
+
+// Convert arguments to File openers.
+// An argument with filename "-" is treated as the 'standard output'
+// Takes a writer 'outPipe' for handling this special case
+func ToPipeWriteableOpeners(args []string, flag int, perm os.FileMode, outPipe io.Writer) []FileOpener {
 	if len(args) > 0 {
 		writers := []FileOpener{}
 		for _, arg := range args {
 			if arg == "-" {
 				writer := func() (*os.File, error) {
-					return os.Stdout, nil
+					return outPipe, nil
 				}
 				writers = append(writers, writer)
 			} else {
@@ -286,17 +327,18 @@ func (flagSet FlagSetWithAliases) ArgsAsWriteables(flag int, perm os.FileMode) [
 	}
 }
 
-/*
-func (flagSet FlagSetWithAliases) ArgsAsWriters(flag int, perm os.FileMode) ([]io.Writer, error) {
-	writers := []io.Writer{}
-	openers := flagSet.ArgsAsWriteables(flag, perm)
-	for _, writeable := range openers {
-		writer, err := writeable()
-		if err != nil {
-			return nil, err
-		}
-		writers = append(writers, writer)
-	}
-	return writers, nil
+// Convert arguments to File openers.
+// An argument with filename "-" is treated as the 'standard output'
+func (flagSet FlagSetWithAliases) ArgsAsWriteables(flag int, perm os.FileMode) []FileOpener {
+	args := flagSet.Args()
+	return ToPipableWriteableOpeners(args, flag, perm, os.Stdout)
 }
-*/
+
+// Convert arguments to File openers.
+// An argument with filename "-" is treated as the 'standard output'
+// Takes a writer 'outPipe' for handling this special case
+func (flagSet FlagSetWithAliases) ArgsAsPipeWriteables(flag int, perm os.FileMode, outPipe io.Writer) []FileOpener {
+	args := flagSet.Args()
+	return ToPipableWriteableOpeners(args, flag, perm, outPipe)
+}
+
