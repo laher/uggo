@@ -28,6 +28,7 @@ type FlagSetWithAliases struct {
 	version        string
 }
 
+
 // factory which sets defaults and 
 // NOTE: discards thet output of the embedded flag.FlagSet. This was necessary in order to override the 'usage' message
 func NewFlagSet(desc string, errorHandling flag.ErrorHandling) FlagSetWithAliases {
@@ -172,6 +173,20 @@ func (flagSet FlagSetWithAliases) Parse(call []string) error {
 		call = Gnuify(call)
 	}
 	return flagSet.FlagSet.Parse(call)
+}
+
+
+func (flagSet FlagSetWithAliases) ParsePlus(call []string) (error, int) {
+	err := flagSet.Parse(call)
+	if err != nil {
+		fmt.Fprintf(flagSet.out, "Flag error: %v\n\n", err.Error())
+		flagSet.Usage()
+		return err, 0
+	}
+	if flagSet.ProcessHelpOrVersion() {
+		return EXIT_OK, 0
+	}
+	return nil, 0
 }
 
 // print defaults to the default output writer
